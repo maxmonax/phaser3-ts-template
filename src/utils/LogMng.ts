@@ -57,10 +57,10 @@ export class LogMng {
     );
   }
 
-  private static log(aMsg: any, aLevel: string = DEBUG, aData?: any): boolean {
+  private static log(aMsg: unknown, aLevel: string = DEBUG, aData?: unknown): boolean {
     if (LogMng.levels.indexOf(aLevel) < 0) return false;
 
-    let css = '';
+    let css: string;
     switch (aLevel) {
       case INFO:
         css = 'background: #308AE4; color: #fff; padding: 1px 4px';
@@ -84,15 +84,14 @@ export class LogMng {
     }
 
     if (import.meta.env.DEV) {
-      aData
-        ? console.log('%c%s', css, aLevel, aMsg, aData)
-        : console.log('%c%s', css, aLevel, aMsg);
+      if (aData !== undefined) console.log('%c%s', css, aLevel, aMsg, aData);
+      else console.log('%c%s', css, aLevel, aMsg);
     }
 
     return true;
   }
 
-  public static system(aMsg: any, aLink: string = '') {
+  public static system(aMsg: unknown, aLink: string = '') {
     if (import.meta.env.DEV) {
       console.log(
         '%c %c %c %s %c %c %c %c%s',
@@ -109,23 +108,23 @@ export class LogMng {
     }
   }
 
-  public static debug(aMsg: any, aData?: any): boolean {
+  public static debug(aMsg: unknown, aData?: unknown): boolean {
     return LogMng.log(aMsg, DEBUG, aData);
   }
 
-  public static info(aMsg: any, aData?: any): boolean {
+  public static info(aMsg: unknown, aData?: unknown): boolean {
     return LogMng.log(aMsg, INFO, aData);
   }
 
-  public static net(aMsg: any, aData?: any): boolean {
+  public static net(aMsg: unknown, aData?: unknown): boolean {
     return LogMng.log(aMsg, NETWORK, aData);
   }
 
-  public static warn(aMsg: any, aData?: any): boolean {
+  public static warn(aMsg: unknown, aData?: unknown): boolean {
     return LogMng.log(aMsg, WARNING, aData);
   }
 
-  public static error(aMsg: any, aData?: any): boolean {
+  public static error(aMsg: unknown, aData?: unknown): boolean {
     return LogMng.log(aMsg, ERROR, aData);
   }
 }

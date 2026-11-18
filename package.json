@@ -14,26 +14,22 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"src/**/*.ts\""
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
-    "dat.gui": "^0.7.9",
-    "phaser": "^3.90.0",
-    "stats-js": "^1.0.1",
-    "ua-parser-js": "^1.0.35"
+    "phaser": "^3.90.0"
   },
   "devDependencies": {
-    "@types/dat.gui": "^0.7.10",
-    "@types/stats": "^0.16.30",
-    "@types/ua-parser-js": "^0.7.36",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.8.3",
-    "typescript": "^5.9.3",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0",
     "vite": "^8.3.8"
   }
 }

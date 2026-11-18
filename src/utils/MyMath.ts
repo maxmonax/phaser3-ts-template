@@ -87,7 +87,7 @@ export class MyMath {
     return res;
   }
 
-  public static shuffleArray(mas: any[], factor = 2) {
+  public static shuffleArray<T>(mas: T[], factor = 2) {
     for (let i = 0; i < mas.length * factor; i++) {
       const id1 = this.randomIntInRange(0, mas.length - 1);
       const id2 = this.randomIntInRange(0, mas.length - 1);
@@ -174,9 +174,9 @@ export class MyMath {
     y2?: number,
     z2?: number
   ): number {
-    let dx = 0;
-    let dy = 0;
-    let dz = 0;
+    let dx: number;
+    let dy: number;
+    let dz: number;
     if (typeof x1 == 'number') {
       dx = (x2 ?? 0) - x1;
       dy = (y2 ?? 0) - (y1 ?? 0);
