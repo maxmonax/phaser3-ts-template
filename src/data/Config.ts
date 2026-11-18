@@ -1,4 +1,4 @@
-﻿const GW = 2400;
+const GW = 2400;
 const GH = 1080;
 const GW_SAFE = 1440;
 const GH_SAFE = 1080;

@@ -1,4 +1,4 @@
-﻿const DEBUG = 'DEBUG';
+const DEBUG = 'DEBUG';
 const INFO = 'INFO';
 const NETWORK = 'NETWORK';
 const WARNING = 'WARNING';

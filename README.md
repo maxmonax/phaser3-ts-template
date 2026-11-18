@@ -48,7 +48,7 @@ game/
 ```sh
 # 1. Clone the repository
 git clone https://github.com/your-username/phaser3-ts-webpack.git
-cd phaser3-ts-webpack/game
+cd phaser3-ts-webpack
 
 # 2. Install dependencies
 npm install
@@ -100,4 +100,4 @@ Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ## License
 
-[ISC](LICENSE)
+[MIT](LICENSE)

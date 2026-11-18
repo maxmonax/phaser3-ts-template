@@ -1,4 +1,4 @@
-﻿import { InterpolationUtils } from './InterpolateUtils';
+import { InterpolationUtils } from './InterpolateUtils';
 
 export class Vec2 {
   x: number;

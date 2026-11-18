@@ -1,0 +1,54 @@
+{
+  "name": "phaser3-template",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Starter template for browser games on Phaser 3 and TypeScript",
+  "license": "MIT",
+  "author": "Monax",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "webpack serve --config configs/webpack.dev.js",
+    "dev:open": "webpack serve --config configs/webpack.dev.js --open",
+    "build:prod": "webpack --config configs/webpack.prod.js --progress",
+    "build:analyze": "webpack --config configs/webpack.prod.js --env analyze --progress",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "phaser": "^3.90.0",
+    "stats-js": "^1.0.1",
+    "ua-parser-js": "^1.0.35"
+  },
+  "devDependencies": {
+    "@types/dat.gui": "^0.7.10",
+    "@types/stats": "^0.16.30",
+    "@types/ua-parser-js": "^0.7.36",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "css-minimizer-webpack-plugin": "^5.0.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "html-webpack-plugin": "^5.5.3",
+    "mini-css-extract-plugin": "^2.7.6",
+    "prettier": "^3.8.3",
+    "sass": "^1.99.0",
+    "sass-loader": "^13.3.2",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.4.4",
+    "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "typescript": "^5.9.3",
+    "webpack": "^5.88.2",
+    "webpack-bundle-analyzer": "^5.3.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-merge": "^5.9.0"
+  }
+}

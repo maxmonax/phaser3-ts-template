@@ -1,4 +1,4 @@
-﻿import { MyMath } from './MyMath';
+import { MyMath } from './MyMath';
 
 export class MyUtils {
   private static queryValues: Record<string, string | string[]> | null = null;
