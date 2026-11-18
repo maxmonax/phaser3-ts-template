@@ -13,15 +13,13 @@ export type ButtonAnimConfig = {
 export type MyBtnParams = ButtonAnimConfig & {
   texture?: string;
   frame?: string;
-  frameOn?: string;
-  frameDisabled?: string;
   size?: {
     w: number;
     h?: number;
   };
   interactivePos?: {
-    x: integer;
-    y: integer;
+    x: number;
+    y: number;
   };
   scale?: number;
   isHoverAnim?: boolean;

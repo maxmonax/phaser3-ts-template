@@ -1,9 +1,10 @@
 import * as Phaser from 'phaser';
 import { MyBtnParams, MyButton } from './MyButton';
+import { Config } from '@/data/Config';
 import { MyText } from './MyText';
 
 const DEFAULT_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: 'Ubuntu',
+  fontFamily: Config.FONT.MAIN,
   fontSize: '70px',
   align: 'center',
   color: '#ffffff',

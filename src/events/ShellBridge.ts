@@ -1,22 +1,37 @@
+import { LogMng } from '../utils/LogMng';
 import { EventBus } from './EventBus';
-import { ShellEvent } from './ShellEvent';
+import { ShellEvent, ShellInEvent } from './ShellEvent';
+
+const IN_EVENTS = new Set<string>(Object.values(ShellInEvent));
 
 // Bridge between the game and the outer HTML shell.
-// Game → Shell: call static methods (they dispatch CustomEvent on window).
-// Shell → Game: call ShellBridge.init() once at startup; shell dispatches 'shellEvent',
+// Game → Shell: call static methods (they dispatch a 'gameEvent' CustomEvent on window).
+// Shell → Game: call ShellBridge.init() once at startup; the shell dispatches 'shellEvent',
 //               the game listens on EventBus with ShellInEvent keys.
 //
 // HTML usage (outgoing):
 //   window.addEventListener('gameEvent', (e) => { console.log(e.detail.type); });
 //
 // HTML usage (incoming):
-//   window.dispatchEvent(new CustomEvent('shellEvent', { detail: { type: 'MUTE' } }));
+//   window.dispatchEvent(new CustomEvent('shellEvent', { detail: { type: 'MUTE', muted: true } }));
 export class ShellBridge {
-  /** Call once at startup. Listens for 'shellEvent' from HTML and re-emits on EventBus. */
+  /**
+   * Call once at startup. Listens for 'shellEvent' from HTML and re-emits it on EventBus.
+   * Only events listed in ShellInEvent pass through: the shell must not be able
+   * to trigger the game's internal events.
+   */
   static init(): void {
     window.addEventListener('shellEvent', (e: Event) => {
-      const { type, ...payload } = (e as CustomEvent<Record<string, unknown>>).detail;
-      EventBus.emit(type as string, payload);
+      const detail: unknown = (e as CustomEvent).detail;
+      if (typeof detail !== 'object' || detail === null) return;
+
+      const { type, ...payload } = detail as Record<string, unknown>;
+      if (typeof type !== 'string' || !IN_EVENTS.has(type)) {
+        LogMng.warn(`ShellBridge: unknown shell event "${String(type)}" ignored`);
+        return;
+      }
+
+      EventBus.emit(type, payload);
     });
   }
 

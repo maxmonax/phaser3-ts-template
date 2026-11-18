@@ -1,111 +1,59 @@
 import * as Phaser from 'phaser';
-export class PreloaderBar extends Phaser.GameObjects.Container {
-  private _useSimple = false;
-  private _borderColor: number;
-  private _lineColor: number;
-  private _lineMask: Phaser.GameObjects.Graphics;
-  private _barWidth = 0;
-  private _barHeight = 0;
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    aUseSimpleGraphics: boolean,
-    aBorderColor = 0xffffff,
-    aLineColor = 0xffffff
-  ) {
+export type PreloaderBarConfig = {
+  width?: number;
+  height?: number;
+  /** Thickness of the frame around the bar. */
+  border?: number;
+  borderColor?: number;
+  fillColor?: number;
+};
+
+/**
+ * Loading progress bar drawn with Graphics: needs no textures,
+ * so it can be shown before any asset is loaded.
+ */
+export class PreloaderBar extends Phaser.GameObjects.Container {
+  private _fill: Phaser.GameObjects.Graphics;
+  private _barWidth: number;
+  private _barHeight: number;
+  private _fillColor: number;
+  private _progress = 0;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, config: PreloaderBarConfig = {}) {
     super(scene, x, y);
 
-    this._useSimple = aUseSimpleGraphics;
-    this._borderColor = aBorderColor;
-    this._lineColor = aLineColor;
+    const border = config.border ?? 4;
+    this._barWidth = config.width ?? 600;
+    this._barHeight = config.height ?? 50;
+    this._fillColor = config.fillColor ?? 0xffffff;
 
-    if (this._useSimple) {
-      const w = 600;
-      const h = 50;
-      const border = 4;
+    const w = this._barWidth;
+    const h = this._barHeight;
 
-      const bg = new Phaser.GameObjects.Graphics(this.scene, {
-        x: 0,
-        y: 0,
-        lineStyle: {
-          color: this._borderColor,
-          width: border,
-        },
-        fillStyle: {
-          alpha: 0,
-          color: this._borderColor,
-        },
-      });
-      bg.strokeRect(-w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2);
-      this.add(bg);
+    const frame = new Phaser.GameObjects.Graphics(scene);
+    frame.lineStyle(border, config.borderColor ?? 0xffffff, 1);
+    frame.strokeRect(-w / 2 - border, -h / 2 - border, w + border * 2, h + border * 2);
+    this.add(frame);
 
-      const line = new Phaser.GameObjects.Graphics(this.scene, {
-        x: 0,
-        y: 0,
-        lineStyle: {
-          color: this._lineColor,
-          width: 2,
-        },
-        fillStyle: {
-          alpha: 1,
-          color: this._lineColor,
-        },
-      });
-      line.fillRect(-w / 2, -h / 2, w, h);
-      this.add(line);
+    this._fill = new Phaser.GameObjects.Graphics(scene);
+    this.add(this._fill);
+  }
 
-      this._barWidth = w;
-      this._barHeight = h;
-
-      this._lineMask = new Phaser.GameObjects.Graphics(this.scene);
-      this._lineMask.clear();
-      this._lineMask.fillStyle(0xffffff, 1);
-      this._lineMask.fillRect(0, 0, this._barWidth, this._barHeight);
-
-      line.mask = this._lineMask.createGeometryMask();
-    } else {
-      const bg = new Phaser.GameObjects.Sprite(this.scene, 0, 0, 'preloader', 'bar_bg');
-      this.add(bg);
-
-      const line = new Phaser.GameObjects.Sprite(this.scene, 0, 0, 'preloader', 'bar_line');
-      this.add(line);
-
-      this._barWidth = line.width;
-      this._barHeight = line.height;
-
-      this._lineMask = new Phaser.GameObjects.Graphics(this.scene);
-      this._lineMask.clear();
-      this._lineMask.fillStyle(0xffffff, 1);
-      this._lineMask.fillRect(0, 0, this._barWidth, this._barHeight);
-
-      line.mask = this._lineMask.createGeometryMask();
-
-      const front = new Phaser.GameObjects.Sprite(this.scene, 0, 0, 'preloader', 'bar_front');
-      this.add(front);
-    }
-
-    this.progress = 0;
+  /** Loading progress in [0..1]. */
+  public get progress(): number {
+    return this._progress;
   }
 
   public set progress(v: number) {
-    // if (this.useSimple) {
-    //     this.lineMask.clear();
-    //     this.lineMask.fillRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth * v, this.barHeight);
-    // }
-    // else {
-    this._lineMask.x = this.x - this._barWidth / 2 - this._barWidth + this._barWidth * v;
-    this._lineMask.y = this.y - this._barHeight / 2;
-    // }
-  }
+    this._progress = Phaser.Math.Clamp(v, 0, 1);
 
-  showAnim() {
-    this.scene.tweens.add({
-      targets: this,
-      alpha: 1,
-      duration: 500,
-      ease: Phaser.Math.Easing.Sine.InOut,
-    });
+    this._fill.clear();
+    if (this._progress <= 0) return;
+
+    const w = this._barWidth;
+    const h = this._barHeight;
+    this._fill.fillStyle(this._fillColor, 1);
+    this._fill.fillRect(-w / 2, -h / 2, w * this._progress, h);
   }
 }

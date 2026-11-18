@@ -1,130 +1,97 @@
-const DEBUG = 'DEBUG';
-const INFO = 'INFO';
-const NETWORK = 'NETWORK';
-const WARNING = 'WARNING';
-const ERROR = 'ERROR';
+type LogLevel = 'DEBUG' | 'INFO' | 'NETWORK' | 'WARNING' | 'ERROR';
+type LogMode = typeof LogMng.MODE_DEBUG | typeof LogMng.MODE_RELEASE;
 
+const BADGE_CSS: Record<LogLevel, string> = {
+  DEBUG: 'background: #ADADAD; color: #fff; padding: 1px 4px',
+  INFO: 'background: #308AE4; color: #fff; padding: 1px 4px',
+  NETWORK: 'background: #7D2998; color: #fff; padding: 1px 4px',
+  WARNING: 'background: #f7a148; color: #fff; padding: 1px 4px',
+  ERROR: 'background: #DB5252; color: #fff; padding: 1px 4px',
+};
+
+/**
+ * Console logger.
+ *
+ * - `warn()` and `error()` are always printed, in every build and mode.
+ * - `debug()`, `info()`, `net()` and `system()` are printed only in dev builds
+ *   and only in `MODE_DEBUG`. In production builds these calls are compiled out.
+ */
 export class LogMng {
   static readonly MODE_DEBUG = 'MODE_DEBUG';
   static readonly MODE_RELEASE = 'MODE_RELEASE';
 
-  // current mode
-  static mode = LogMng.MODE_DEBUG;
-  // available levels
-  static levels = [DEBUG, INFO, NETWORK, WARNING, ERROR];
+  private static mode: LogMode = LogMng.MODE_DEBUG;
 
-  public static setMode(aMode: string) {
+  public static setMode(aMode: LogMode): void {
     LogMng.mode = aMode;
-    switch (LogMng.mode) {
-      case LogMng.MODE_DEBUG:
-        LogMng.levels = [DEBUG, INFO, NETWORK, WARNING, ERROR];
-        break;
-      case LogMng.MODE_RELEASE:
-        LogMng.levels = [WARNING, ERROR];
-        break;
-    }
   }
 
-  public static getMode(): string {
-    return this.mode;
+  public static getMode(): LogMode {
+    return LogMng.mode;
+  }
+
+  private static isVerbose(): boolean {
+    return import.meta.env.DEV && LogMng.mode === LogMng.MODE_DEBUG;
+  }
+
+  private static print(
+    aPrinter: (...args: unknown[]) => void,
+    aLevel: LogLevel,
+    aMsg: unknown,
+    aData?: unknown
+  ): void {
+    if (aData === undefined) aPrinter('%c%s', BADGE_CSS[aLevel], aLevel, aMsg);
+    else aPrinter('%c%s', BADGE_CSS[aLevel], aLevel, aMsg, aData);
   }
 
   private static getCSS(bgColor: string): string {
-    return (
-      'background: ' +
-      bgColor +
-      ';' +
-      'background-repeat: no-repeat;' +
-      'color: #1df9a8;' +
-      'line-height: 16px;' +
-      'padding: 1px 0;' +
-      'margin: 0;' +
-      'user-select: none;' +
-      '-webkit-user-select: none;' +
-      '-moz-user-select: none;'
+    return `background: ${bgColor}; color: #1df9a8; line-height: 16px; padding: 1px 0; margin: 0;`;
+  }
+
+  /** Banner-style message, e.g. for the app version at startup. */
+  public static system(aMsg: unknown, aLink: string = ''): void {
+    if (!LogMng.isVerbose()) return;
+    console.log(
+      '%c %c %c %s %c %c %c%s',
+      LogMng.getCSS('#5C6166'),
+      LogMng.getCSS('#4F5357'),
+      LogMng.getCSS('#313335'),
+      aMsg,
+      LogMng.getCSS('#4F5357'),
+      LogMng.getCSS('#5C6166'),
+      'font-size: 12px; color: #446d96; line-height: 14px',
+      aLink
     );
   }
 
-  private static getLink(color: string): string {
-    return (
-      'background: ' +
-      color +
-      ';' +
-      'background-repeat: no-repeat;' +
-      'font-size: 12px;' +
-      'color: #446d96;' +
-      'line-height: 14px'
-    );
-  }
-
-  private static log(aMsg: unknown, aLevel: string = DEBUG, aData?: unknown): boolean {
-    if (LogMng.levels.indexOf(aLevel) < 0) return false;
-
-    let css: string;
-    switch (aLevel) {
-      case INFO:
-        css = 'background: #308AE4; color: #fff; padding: 1px 4px';
-        break;
-
-      case WARNING:
-        css = 'background: #f7a148; color: #fff; padding: 1px 4px';
-        break;
-
-      case ERROR:
-        css = 'background: #DB5252; color: #fff; padding: 1px 4px';
-        break;
-
-      case NETWORK:
-        css = 'background: #7D2998; color: #fff; padding: 1px 4px';
-        break;
-
-      case DEBUG:
-      default:
-        css = 'background: #ADADAD; color: #fff; padding: 1px 4px';
-    }
-
-    if (import.meta.env.DEV) {
-      if (aData !== undefined) console.log('%c%s', css, aLevel, aMsg, aData);
-      else console.log('%c%s', css, aLevel, aMsg);
-    }
-
+  /** @returns `true` if the message was printed. */
+  public static debug(aMsg: unknown, aData?: unknown): boolean {
+    if (!LogMng.isVerbose()) return false;
+    LogMng.print(console.log, 'DEBUG', aMsg, aData);
     return true;
   }
 
-  public static system(aMsg: unknown, aLink: string = '') {
-    if (import.meta.env.DEV) {
-      console.log(
-        '%c %c %c %s %c %c %c %c%s',
-        LogMng.getCSS('#5C6166'),
-        LogMng.getCSS('#4F5357'),
-        LogMng.getCSS('#313335'),
-        aMsg,
-        LogMng.getCSS('#4F5357'),
-        LogMng.getCSS('#5C6166'),
-        LogMng.getLink('none'),
-        LogMng.getLink('none'),
-        aLink
-      );
-    }
-  }
-
-  public static debug(aMsg: unknown, aData?: unknown): boolean {
-    return LogMng.log(aMsg, DEBUG, aData);
-  }
-
+  /** @returns `true` if the message was printed. */
   public static info(aMsg: unknown, aData?: unknown): boolean {
-    return LogMng.log(aMsg, INFO, aData);
+    if (!LogMng.isVerbose()) return false;
+    LogMng.print(console.log, 'INFO', aMsg, aData);
+    return true;
   }
 
+  /** @returns `true` if the message was printed. */
   public static net(aMsg: unknown, aData?: unknown): boolean {
-    return LogMng.log(aMsg, NETWORK, aData);
+    if (!LogMng.isVerbose()) return false;
+    LogMng.print(console.log, 'NETWORK', aMsg, aData);
+    return true;
   }
 
   public static warn(aMsg: unknown, aData?: unknown): boolean {
-    return LogMng.log(aMsg, WARNING, aData);
+    LogMng.print(console.warn, 'WARNING', aMsg, aData);
+    return true;
   }
 
   public static error(aMsg: unknown, aData?: unknown): boolean {
-    return LogMng.log(aMsg, ERROR, aData);
+    LogMng.print(console.error, 'ERROR', aMsg, aData);
+    return true;
   }
 }

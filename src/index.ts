@@ -1,3 +1,7 @@
+// Web fonts are bundled with the game: no requests to external servers.
+// One file per script; add more subsets here when you add languages.
+import '@fontsource/ubuntu/latin-400.css';
+import '@fontsource/ubuntu/cyrillic-400.css';
 import './styles/main.css';
 import * as Phaser from 'phaser';
 import { Config } from './data/Config';
@@ -10,18 +14,22 @@ import { TransitionScene } from './scenes/TransitionScene';
 import { EventBus } from './events/EventBus';
 import { FrontEvent } from './events/FrontEvent';
 import { ShellBridge } from './events/ShellBridge';
+import { detectLang, LocaleMng } from './locale/LocaleMng';
 import { OrientationAlert } from './scaling/OrientationAlert';
+import { loadFonts } from './utils/FontLoader';
 // for spine (uncomment if needed, add spine.d.ts for types):
 // import "phaser/plugins/spine/dist/SpinePlugin";
 // import { SpineFile } from 'phaser/types/SpineFile';
 // import { SpineGameObject } from 'phaser/types/SpineGameObject';
 // import { SpinePlugin } from 'phaser/types/SpinePlugin';
 
-function startGame(aGameParams: { parent: HTMLElement }) {
-  new Phaser.Game({
+const GAME_CONTAINER_ID = 'game';
+
+function startGame(parent: HTMLElement): Phaser.Game {
+  return new Phaser.Game({
     type: Phaser.AUTO,
-    parent: aGameParams.parent,
-    backgroundColor: 0x222222,
+    parent,
+    // The canvas is transparent: the page background from main.css shows through.
     transparent: true,
     scale: {
       mode: Phaser.Scale.HEIGHT_CONTROLS_WIDTH,
@@ -57,24 +65,30 @@ window.addEventListener(
   false
 );
 
-window.addEventListener(
-  'load',
-  () => {
-    const gameContainerId = 'game';
-    const gameContainer = document.getElementById(gameContainerId);
-    if (!gameContainer) {
-      const error = `ERROR: game container ${gameContainerId} not found!`;
-      alert(error);
-      throw new Error(error);
-    }
+async function boot(): Promise<void> {
+  const gameContainer = document.getElementById(GAME_CONTAINER_ID);
+  if (!gameContainer) {
+    throw new Error(`Game container #${GAME_CONTAINER_ID} not found`);
+  }
 
-    if (Config.ORIENTATION.check) {
-      OrientationAlert.initOrientation();
-      OrientationAlert.checkOrientation(true);
-    }
-    ShellBridge.init();
-    windowResizeCalculate();
-    startGame({ parent: gameContainer });
-  },
-  false
-);
+  if (Config.ORIENTATION.check) {
+    OrientationAlert.initOrientation();
+    OrientationAlert.checkOrientation();
+  }
+  ShellBridge.init();
+  LocaleMng.getInstance().setLang(detectLang());
+  windowResizeCalculate();
+
+  await loadFonts(Object.values(Config.FONT));
+
+  const game = startGame(gameContainer);
+  if (Config.ORIENTATION.check) {
+    OrientationAlert.setGame(game);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => void boot());
+} else {
+  void boot();
+}

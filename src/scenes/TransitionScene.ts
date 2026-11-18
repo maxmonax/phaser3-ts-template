@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import { AudioMng } from '@/audio/AudioMng';
 import { Config } from '@/data/Config';
 import { Curtain } from '@/gui/Curtain';
 import { SceneNames } from './SceneNames';
@@ -48,7 +47,10 @@ export class TransitionScene extends Phaser.Scene {
   }
 
   public create(data: TransitionData): void {
-    AudioMng.init(this);
+    // Whatever interrupts the transition, the next one must not stay blocked.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      TransitionScene._isTransitioning = false;
+    });
 
     const duration = data.duration ?? TransitionScene.DEFAULT_DURATION;
     const alpha = data.alpha ?? TransitionScene.DEFAULT_ALPHA;

@@ -1,5 +1,4 @@
 import * as Phaser from 'phaser';
-import { AudioMng } from '@/audio/AudioMng';
 import { Config } from '../data/Config';
 import { Params } from '../data/Params';
 import { SceneNames } from './SceneNames';
@@ -19,8 +18,6 @@ export class GameScene extends BaseScene {
   }
 
   public create(): void {
-    AudioMng.init(this);
-
     this._dummyGame = new MyContainer(this, 0, 0);
     this.add.existing(this._dummyGame);
 
@@ -39,9 +36,9 @@ export class GameScene extends BaseScene {
       this,
       Config.GW / 2,
       Config.GH_HALF,
-      'Game Screen\nCustom google font',
+      'Game Screen\nCustom web font',
       {
-        fontFamily: 'Ubuntu',
+        fontFamily: Config.FONT.MAIN,
         color: '#ffffff',
         align: 'center',
       }

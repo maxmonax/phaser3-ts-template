@@ -1,23 +1,31 @@
 import * as Phaser from 'phaser';
+import { AudioMng } from '../audio/AudioMng';
 import { DevParams } from '../data/DevParams';
+import { EventBus } from '../events/EventBus';
+import { ShellInEvent } from '../events/ShellEvent';
 import { LogMng } from '../utils/LogMng';
 import { SceneNames } from './SceneNames';
 
+function onShellMute(payload?: { muted?: unknown }): void {
+  AudioMng.setMuted(payload?.muted !== false);
+}
+
+/** First scene: one-time setup of game-wide services. Runs once per game. */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super(SceneNames.BootScene);
-
-    // LogMng settings
-    if (!DevParams.debug) LogMng.setMode(LogMng.MODE_RELEASE);
-    LogMng.system('log mode: ' + LogMng.getMode());
-
-    this.readGETParams();
   }
 
-  private readGETParams() {
+  public init(): void {
+    LogMng.setMode(DevParams.debug ? LogMng.MODE_DEBUG : LogMng.MODE_RELEASE);
+    LogMng.system('log mode: ' + LogMng.getMode());
+
     if (DevParams.testParam != null) {
       LogMng.debug(`GET key "testParam" = ${DevParams.testParam}`);
     }
+
+    AudioMng.init(this.game);
+    EventBus.on(ShellInEvent.MUTE, onShellMute);
   }
 
   public preload(): void {

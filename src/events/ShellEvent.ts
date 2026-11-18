@@ -5,5 +5,6 @@ export enum ShellEvent {
 
 // Events sent from HTML shell to game (via ShellBridge.init listener)
 export enum ShellInEvent {
+  /** Payload: `{ muted?: boolean }`, `muted` defaults to `true`. */
   MUTE = 'MUTE',
 }

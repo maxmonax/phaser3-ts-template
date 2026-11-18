@@ -1,13 +1,14 @@
 import { AUDIO_LOAD_DATA } from '@/data/AudioData';
 import { Config } from '../data/Config';
 import { PreloaderBar } from '../gui/preloader/PreloaderBar';
+import { LogMng } from '../utils/LogMng';
 import { BaseScene } from './BaseScene';
 import { SceneNames } from './SceneNames';
 
-enum Styles {
-  Color = '#ffffff',
-  Font = 'Ubuntu',
-}
+const Styles = {
+  Color: '#ffffff',
+  Font: Config.FONT.MAIN,
+} as const;
 
 export class PreloaderScene extends BaseScene {
   private _bar!: PreloaderBar;
@@ -18,7 +19,7 @@ export class PreloaderScene extends BaseScene {
 
   public preload(): void {
     if (Config.PRELOADER.BAR) {
-      this._bar = new PreloaderBar(this, Config.GW_HALF, Config.GH_HALF + 200, true);
+      this._bar = new PreloaderBar(this, Config.GW_HALF, Config.GH_HALF + 200);
       this.add.existing(this._bar);
     }
 
@@ -52,7 +53,7 @@ export class PreloaderScene extends BaseScene {
   }
 
   public create(): void {
-    console.log('PreloaderScene create...');
+    LogMng.debug('PreloaderScene create...');
 
     if (Config.PRELOADER.DRAW_DEBUG_BORDER) {
       this.add.rectangle(Config.GW / 2, Config.GH / 2, Config.GW, Config.GH, 0x0, 0.1);

@@ -20,6 +20,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@fontsource/ubuntu": "^5.3.0",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

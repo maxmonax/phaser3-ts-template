@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { MyMath } from '../utils/MyMath';
 import { AUDIO_LOAD_DATA } from '../data/AudioData';
+import { Fader, type FadeHandle } from './Fader';
 
 type ManagedSound = Phaser.Sound.BaseSound & {
   volume: number;
@@ -12,7 +13,7 @@ type MusicEntry = {
   sound: ManagedSound;
   baseVolume: number;
   currentBaseVolume: number;
-  fadeTween?: Phaser.Tweens.Tween;
+  fade?: FadeHandle;
 };
 
 export type PlayMusicOptions = {
@@ -56,15 +57,19 @@ export class AudioMng {
   private static readonly MIN_VOLUME = 0;
   private static readonly MAX_VOLUME = 1;
 
-  private static scene: Phaser.Scene | null = null;
+  private static game: Phaser.Game | null = null;
+  private static fader = new Fader();
   private static musicEnabled = true;
+  private static musicEnabledVolume = 1;
   private static sfxEnabled = true;
+  private static muted = false;
   private static musicVolume = 1;
   private static musicDuckVolume = 1;
   private static sfxVolume = 1;
-  private static musicVolumeTween?: Phaser.Tweens.Tween;
-  private static duckTween?: Phaser.Tweens.Tween;
-  private static duckTimer?: Phaser.Time.TimerEvent;
+  private static musicVolumeFade?: FadeHandle;
+  private static musicEnabledFade?: FadeHandle;
+  private static duckFade?: FadeHandle;
+  private static duckTimer?: FadeHandle;
   private static musics = new Map<string, MusicEntry>();
   private static activeSfx = new Map<string, Set<Phaser.Sound.BaseSound>>();
   private static sfxMaxInstances = new Map<string, number>(
@@ -74,8 +79,28 @@ export class AudioMng {
     ])
   );
 
-  static init(scene: Phaser.Scene): void {
-    AudioMng.scene = scene;
+  /**
+   * Call once at startup. The manager is bound to the game, not to a scene:
+   * sounds and fades keep working while scenes are stopped and started.
+   */
+  static init(game: Phaser.Game): void {
+    if (AudioMng.game === game) return;
+    AudioMng.dispose();
+    AudioMng.game = game;
+    game.events.on(Phaser.Core.Events.STEP, AudioMng.onGameStep);
+    game.events.once(Phaser.Core.Events.DESTROY, AudioMng.dispose);
+  }
+
+  private static onGameStep(_time: number, delta: number): void {
+    AudioMng.fader.update(delta);
+  }
+
+  private static dispose(): void {
+    AudioMng.game?.events.off(Phaser.Core.Events.STEP, AudioMng.onGameStep);
+    AudioMng.fader.clear();
+    AudioMng.musics.clear();
+    AudioMng.activeSfx.clear();
+    AudioMng.game = null;
   }
 
   static getSoundFileByName(alias: string): string {
@@ -90,22 +115,24 @@ export class AudioMng {
     return AudioMng.musics.get(name)?.sound.isPlaying ?? false;
   }
 
-  static playMusic(name: string, options?: PlayMusicOptions): Phaser.Sound.BaseSound | null;
+  /**
+   * Starts a music track, or fades an already playing one to the given volume.
+   * While music is disabled the track plays silently (see `setMusicEnabled`).
+   */
+  static playMusic(name: string, options?: PlayMusicOptions): Phaser.Sound.BaseSound;
   static playMusic(
     name: string,
     volumeFrom: number,
     volumeTo?: number,
     fadeDuration?: number
-  ): Phaser.Sound.BaseSound | null;
+  ): Phaser.Sound.BaseSound;
   static playMusic(
     name: string,
     optionsOrVolumeFrom: PlayMusicOptions | number = {},
     volumeTo = AudioMng.DEFAULT_MUSIC_VOLUME,
     fadeDuration = AudioMng.DEFAULT_MUSIC_FADE
-  ): Phaser.Sound.BaseSound | null {
-    if (!AudioMng.musicEnabled) return null;
-
-    const scene = AudioMng.getScene();
+  ): Phaser.Sound.BaseSound {
+    const manager = AudioMng.getSoundManager();
     const options = AudioMng.normalizeMusicOptions(optionsOrVolumeFrom, volumeTo, fadeDuration);
     const volume = AudioMng.clampVolume(options.volume ?? AudioMng.DEFAULT_MUSIC_VOLUME);
     const fadeFrom = AudioMng.clampVolume(options.fadeFrom ?? 0);
@@ -127,7 +154,7 @@ export class AudioMng {
       return existing.sound;
     }
 
-    const sound = scene.sound.add(name, {
+    const sound = manager.add(name, {
       ...options.config,
       loop,
       volume: AudioMng.getEffectiveMusicVolume(fadeMs > 0 ? fadeFrom : volume),
@@ -166,7 +193,7 @@ export class AudioMng {
     fromName: string,
     toName: string,
     options: CrossfadeMusicOptions = {}
-  ): Phaser.Sound.BaseSound | null {
+  ): Phaser.Sound.BaseSound {
     const duration = Math.max(
       0,
       options.duration ?? options.fadeDuration ?? AudioMng.DEFAULT_MUSIC_FADE
@@ -265,7 +292,7 @@ export class AudioMng {
 
     AudioMng.tweenDuckVolume(duckVolume, fadeOut, () => {
       if (hold > 0) {
-        AudioMng.duckTimer = AudioMng.getScene().time.delayedCall(hold, () => {
+        AudioMng.duckTimer = AudioMng.fader.delay(hold, () => {
           AudioMng.restoreMusicDuck(fadeIn);
         });
       }
@@ -277,11 +304,36 @@ export class AudioMng {
     AudioMng.tweenDuckVolume(1, Math.max(0, fadeDuration));
   }
 
+  /**
+   * Turns music on or off. Disabled music keeps playing silently,
+   * so enabling it again continues the tracks instead of losing them.
+   */
   static setMusicEnabled(enabled: boolean, fadeDuration = AudioMng.DEFAULT_MUSIC_FADE): void {
     AudioMng.musicEnabled = enabled;
-    if (!enabled) {
-      AudioMng.stopAllMusic(0, fadeDuration);
+    AudioMng.musicEnabledFade?.stop();
+    AudioMng.musicEnabledFade = undefined;
+
+    const target = enabled ? 1 : 0;
+    const duration = Math.max(0, fadeDuration);
+    // Without a game nothing drives the fader yet: apply the value right away.
+    if (duration <= 0 || !AudioMng.game) {
+      AudioMng.musicEnabledVolume = target;
+      AudioMng.refreshMusicVolumes(0);
+      return;
     }
+
+    AudioMng.musicEnabledFade = AudioMng.fader.add(
+      AudioMng.musicEnabledVolume,
+      target,
+      duration,
+      (value) => {
+        AudioMng.musicEnabledVolume = value;
+        AudioMng.refreshMusicVolumes(0);
+      },
+      () => {
+        AudioMng.musicEnabledFade = undefined;
+      }
+    );
   }
 
   static getMusicEnabled(): boolean {
@@ -308,6 +360,18 @@ export class AudioMng {
     return AudioMng.musicEnabled && AudioMng.sfxEnabled;
   }
 
+  /** Mutes or unmutes all game audio (music and sfx) without stopping it. */
+  static setMuted(muted: boolean): void {
+    AudioMng.muted = muted;
+    AudioMng.getSoundManager().mute = muted;
+  }
+
+  static isMuted(): boolean {
+    // Kept here on purpose: the sound manager reports the new state
+    // only after the audio thread has applied it.
+    return AudioMng.muted;
+  }
+
   static playSfx(
     name: string,
     volume = 1,
@@ -320,7 +384,7 @@ export class AudioMng {
   static playSfxEx(name: string, options: PlaySfxOptions = {}): Phaser.Sound.BaseSound | undefined {
     if (!AudioMng.sfxEnabled) return undefined;
 
-    const scene = AudioMng.getScene();
+    const manager = AudioMng.getSoundManager();
     const { force = false, marker, maxInstances, ...config } = options;
     if (!force && !AudioMng.canPlaySfx(name, maxInstances)) return undefined;
 
@@ -328,7 +392,7 @@ export class AudioMng {
       ...config,
       volume: AudioMng.clampVolume((config.volume ?? 1) * AudioMng.sfxVolume),
     };
-    const sound = scene.sound.add(name, sfxConfig);
+    const sound = manager.add(name, sfxConfig);
     AudioMng.registerSfx(name, sound);
 
     const isStarted = marker ? sound.play(marker, sfxConfig) : sound.play(sfxConfig);
@@ -383,13 +447,11 @@ export class AudioMng {
     }
   }
 
-  static update(_dt: number): void {}
-
-  private static getScene(): Phaser.Scene {
-    if (!AudioMng.scene) {
-      throw new Error('AudioMng: call AudioMng.init(scene) before using sounds.');
+  private static getSoundManager() {
+    if (!AudioMng.game) {
+      throw new Error('AudioMng: call AudioMng.init(game) before using sounds.');
     }
-    return AudioMng.scene;
+    return AudioMng.game.sound;
   }
 
   private static normalizeMusicOptions(
@@ -414,14 +476,11 @@ export class AudioMng {
     duration: number,
     onComplete?: () => void
   ): void {
-    const scene = AudioMng.getScene();
     const baseVolume = AudioMng.clampVolume(volume);
     entry.baseVolume = baseVolume;
 
-    if (entry.fadeTween) {
-      entry.fadeTween.stop();
-      entry.fadeTween = undefined;
-    }
+    entry.fade?.stop();
+    entry.fade = undefined;
 
     if (duration <= 0) {
       entry.currentBaseVolume = baseVolume;
@@ -430,23 +489,19 @@ export class AudioMng {
       return;
     }
 
-    const tweenData = { volume: entry.currentBaseVolume };
-    entry.fadeTween = scene.tweens.add({
-      targets: tweenData,
-      volume: baseVolume,
+    entry.fade = AudioMng.fader.add(
+      entry.currentBaseVolume,
+      baseVolume,
       duration,
-      ease: Phaser.Math.Easing.Linear,
-      onUpdate: () => {
-        entry.currentBaseVolume = tweenData.volume;
-        entry.sound.setVolume(AudioMng.getEffectiveMusicVolume(entry.currentBaseVolume));
+      (value) => {
+        entry.currentBaseVolume = value;
+        entry.sound.setVolume(AudioMng.getEffectiveMusicVolume(value));
       },
-      onComplete: () => {
-        entry.fadeTween = undefined;
-        entry.currentBaseVolume = baseVolume;
-        entry.sound.setVolume(AudioMng.getEffectiveMusicVolume(entry.currentBaseVolume));
+      () => {
+        entry.fade = undefined;
         onComplete?.();
-      },
-    });
+      }
+    );
   }
 
   private static stopMusicEntry(
@@ -465,6 +520,8 @@ export class AudioMng {
   private static removeMusicEntry(name: string, sound: Phaser.Sound.BaseSound): void {
     const entry = AudioMng.musics.get(name);
     if (entry?.sound === sound) {
+      entry.fade?.stop();
+      entry.fade = undefined;
       AudioMng.musics.delete(name);
     }
   }
@@ -507,7 +564,10 @@ export class AudioMng {
 
   private static getEffectiveMusicVolume(baseVolume: number): number {
     return AudioMng.clampVolume(
-      AudioMng.clampVolume(baseVolume) * AudioMng.musicVolume * AudioMng.musicDuckVolume
+      AudioMng.clampVolume(baseVolume) *
+        AudioMng.musicVolume *
+        AudioMng.musicDuckVolume *
+        AudioMng.musicEnabledVolume
     );
   }
 
@@ -538,22 +598,15 @@ export class AudioMng {
   }
 
   private static stopDuckTweens(): void {
-    if (AudioMng.duckTween) {
-      AudioMng.duckTween.stop();
-      AudioMng.duckTween = undefined;
-    }
-
-    if (AudioMng.duckTimer) {
-      AudioMng.duckTimer.remove(false);
-      AudioMng.duckTimer = undefined;
-    }
+    AudioMng.duckFade?.stop();
+    AudioMng.duckFade = undefined;
+    AudioMng.duckTimer?.stop();
+    AudioMng.duckTimer = undefined;
   }
 
   private static tweenMusicVolume(volume: number, duration: number): void {
-    if (AudioMng.musicVolumeTween) {
-      AudioMng.musicVolumeTween.stop();
-      AudioMng.musicVolumeTween = undefined;
-    }
+    AudioMng.musicVolumeFade?.stop();
+    AudioMng.musicVolumeFade = undefined;
 
     if (duration <= 0) {
       AudioMng.musicVolume = volume;
@@ -561,22 +614,18 @@ export class AudioMng {
       return;
     }
 
-    const tweenData = { volume: AudioMng.musicVolume };
-    AudioMng.musicVolumeTween = AudioMng.getScene().tweens.add({
-      targets: tweenData,
+    AudioMng.musicVolumeFade = AudioMng.fader.add(
+      AudioMng.musicVolume,
       volume,
       duration,
-      ease: Phaser.Math.Easing.Linear,
-      onUpdate: () => {
-        AudioMng.musicVolume = tweenData.volume;
+      (value) => {
+        AudioMng.musicVolume = value;
         AudioMng.refreshMusicVolumes(0);
       },
-      onComplete: () => {
-        AudioMng.musicVolumeTween = undefined;
-        AudioMng.musicVolume = volume;
-        AudioMng.refreshMusicVolumes(0);
-      },
-    });
+      () => {
+        AudioMng.musicVolumeFade = undefined;
+      }
+    );
   }
 
   private static tweenDuckVolume(volume: number, duration: number, onComplete?: () => void): void {
@@ -587,23 +636,19 @@ export class AudioMng {
       return;
     }
 
-    const tweenData = { volume: AudioMng.musicDuckVolume };
-    AudioMng.duckTween = AudioMng.getScene().tweens.add({
-      targets: tweenData,
+    AudioMng.duckFade = AudioMng.fader.add(
+      AudioMng.musicDuckVolume,
       volume,
       duration,
-      ease: Phaser.Math.Easing.Linear,
-      onUpdate: () => {
-        AudioMng.musicDuckVolume = tweenData.volume;
+      (value) => {
+        AudioMng.musicDuckVolume = value;
         AudioMng.refreshMusicVolumes(0);
       },
-      onComplete: () => {
-        AudioMng.duckTween = undefined;
-        AudioMng.musicDuckVolume = volume;
-        AudioMng.refreshMusicVolumes(0);
+      () => {
+        AudioMng.duckFade = undefined;
         onComplete?.();
-      },
-    });
+      }
+    );
   }
 
   private static normalizeMaxInstances(maxInstances: number): number {

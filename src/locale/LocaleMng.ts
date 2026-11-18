@@ -1,13 +1,13 @@
 import { en } from './en';
 import { ru } from './ru';
-import { Lang, LocaleData, LocaleKey } from './LocaleKeys';
+import { DEFAULT_LANG, LANGS, type Lang, type LocaleData, type LocaleKey } from './LocaleKeys';
 
 const LOCALES: Record<Lang, LocaleData> = { en, ru };
 
 class LocaleMng {
   private static _instance: LocaleMng;
-  private _data: LocaleData = en;
-  private _lang: Lang = 'en';
+  private _lang: Lang = DEFAULT_LANG;
+  private _data: LocaleData = LOCALES[DEFAULT_LANG];
   private _listeners: Array<(lang: Lang) => void> = [];
 
   static getInstance(): LocaleMng {
@@ -38,7 +38,7 @@ class LocaleMng {
     let str = this._data[key];
     if (!params) return str;
     for (const [k, v] of Object.entries(params)) {
-      str = str.replace(`{${k}}`, String(v));
+      str = str.replaceAll(`{${k}}`, String(v));
     }
     return str;
   }
@@ -49,4 +49,17 @@ export { LocaleMng };
 /** Shorthand: `t('key')` or `t('key', { name: 'Max' })` */
 export function t(key: LocaleKey, params?: Record<string, string | number>): string {
   return LocaleMng.getInstance().t(key, params);
+}
+
+/**
+ * Picks the first supported language from a list of BCP 47 tags
+ * ordered by preference. Defaults to the browser's language list.
+ */
+export function detectLang(preferred: readonly string[] = navigator.languages): Lang {
+  for (const tag of preferred) {
+    const code = tag.toLowerCase().split('-')[0];
+    const lang = LANGS.find((l) => l === code);
+    if (lang) return lang;
+  }
+  return DEFAULT_LANG;
 }

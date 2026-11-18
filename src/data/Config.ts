@@ -18,6 +18,14 @@ export const Config = {
     ar: GW_SAFE / GH_SAFE,
   },
 
+  /**
+   * Font families used in the game. Every family listed here is loaded
+   * before the game starts; the font files are imported in index.ts.
+   */
+  FONT: {
+    MAIN: 'Ubuntu',
+  },
+
   PRELOADER: {
     BAR: true,
     TAP_TO_START: true,

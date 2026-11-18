@@ -1,16 +1,13 @@
 import * as Phaser from 'phaser';
-import { AudioMng } from '@/audio/AudioMng';
 import { MyButton } from '@/gui/basic/MyButton';
 import { MyTextButton } from '@/gui/basic/MyTextButton';
 import { Config } from '../data/Config';
-import { Lang } from '../locale/LocaleKeys';
+import { LANGS, type Lang } from '../locale/LocaleKeys';
 import { LocaleMng } from '../locale/LocaleMng';
 import { LogMng } from '../utils/LogMng';
 import { BaseScene } from './BaseScene';
 import { SceneNames } from './SceneNames';
 import { TransitionScene } from './TransitionScene';
-
-const LANGS: Lang[] = ['en', 'ru'];
 
 export class MenuScene extends BaseScene {
   private _dummyMain!: Phaser.GameObjects.Container;
@@ -27,13 +24,11 @@ export class MenuScene extends BaseScene {
   public preload(): void {}
 
   public create(): void {
-    AudioMng.init(this);
-
     this._dummyMain = this.add.container(0, 0);
 
     this._title = this.add
       .text(Config.GW_HALF, Config.GH_HALF - 400, this.t('menu_title'), {
-        fontFamily: 'Ubuntu',
+        fontFamily: Config.FONT.MAIN,
         fontSize: '80px',
         color: '#ffffff',
       })
@@ -69,9 +64,8 @@ export class MenuScene extends BaseScene {
   }
 
   private onLangBtnClick(): void {
-    const langs = LANGS;
     const current = LocaleMng.getInstance().getLang();
-    const next = langs[(langs.indexOf(current) + 1) % langs.length];
+    const next = LANGS[(LANGS.indexOf(current) + 1) % LANGS.length];
     LocaleMng.getInstance().setLang(next);
   }
 
