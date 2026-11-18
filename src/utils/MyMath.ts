@@ -329,7 +329,9 @@ export class MyMath {
     return !(hasNegative && hasPositive);
   }
 
+  /** The rectangle may be rotated; its corners go around it in order: a, b, c, d. */
   public static isPointInRect(rect: RectABCD, p: Vec2): boolean {
+    // The rectangle is split into triangles abc and cda; the point must be in one of them.
     return (
       MyMath.isPointInTriangle(
         rect.a.x,
@@ -340,7 +342,7 @@ export class MyMath {
         rect.c.y,
         p.x,
         p.y
-      ) &&
+      ) ||
       MyMath.isPointInTriangle(rect.c.x, rect.c.y, rect.d.x, rect.d.y, rect.a.x, rect.a.y, p.x, p.y)
     );
   }
