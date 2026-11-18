@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   // Relative asset paths: the build works from any subfolder
@@ -25,5 +25,10 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    // Unit tests cover engine-independent logic only, so no DOM is needed.
+    environment: 'node',
+    include: ['tests/**/*.test.ts'],
   },
 });
