@@ -12,6 +12,6 @@
 const _search = new URLSearchParams(location.search);
 
 export const DevParams = {
-  debug:     location.hash === '#debug',
+  debug: location.hash === '#debug',
   testParam: _search.get('testParam'),
 } as const;
