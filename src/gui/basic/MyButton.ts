@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { AudioMng } from '@/audio/AudioMng';
 import { MyContainer } from './MyContainer';
 import { MyImage } from './MyImage';

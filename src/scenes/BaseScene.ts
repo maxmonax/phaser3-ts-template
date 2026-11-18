@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { EventBus } from '../events/EventBus';
 import { FrontEvent } from '../events/FrontEvent';
 import { Lang, LocaleKey } from '../locale/LocaleKeys';

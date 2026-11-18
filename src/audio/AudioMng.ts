@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { MyMath } from '../utils/MyMath';
 import { AUDIO_LOAD_DATA } from '../data/AudioData';
 

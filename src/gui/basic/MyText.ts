@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 export class MyText extends Phaser.GameObjects.Text {
   constructor(
     scene: Phaser.Scene,

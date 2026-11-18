@@ -1,41 +1,23 @@
 {
-    "compilerOptions": {
-        "target": "ES2020",
-        "module": "ES2020",
-        "lib": [
-            "DOM",
-            "DOM.Iterable",
-            "ES2020"
-        ],
-        "moduleResolution": "Bundler",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noImplicitReturns": true,
-        "forceConsistentCasingInFileNames": true,
-        "skipLibCheck": true,
-        "sourceMap": true,
-        "rootDir": "./src",
-        "outDir": "build",
-        "paths": {
-            "@/*": [
-                "./src/*"
-            ]
-        },
-        // "emitDecoratorMetadata": true,
-        // "experimentalDecorators": true
-    },
-    "include": [
-        "src/**/*.ts",
-        "src/**/*.d.ts",
-        "src/**/*.tsx"
-    ],
-    "exclude": [
-        "node_modules",
-        "public",
-        "build",
-        "dist"
-    ]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
 }

@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { ILogger } from '@/interfaces/ILogger';
 import { LogMng } from '@/utils/LogMng';
 

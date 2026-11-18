@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { DevParams } from '../data/DevParams';
 import { LogMng } from '../utils/LogMng';
 import { SceneNames } from './SceneNames';

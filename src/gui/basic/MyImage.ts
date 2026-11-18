@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 export class MyImage extends Phaser.GameObjects.Image {
   constructor(
     scene: Phaser.Scene,

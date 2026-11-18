@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { AudioMng } from '@/audio/AudioMng';
 import { MyButton } from '@/gui/basic/MyButton';
 import { MyTextButton } from '@/gui/basic/MyTextButton';

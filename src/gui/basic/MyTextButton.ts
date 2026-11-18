@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { MyBtnParams, MyButton } from './MyButton';
 import { MyText } from './MyText';
 

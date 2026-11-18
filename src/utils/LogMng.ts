@@ -83,7 +83,7 @@ export class LogMng {
         css = 'background: #ADADAD; color: #fff; padding: 1px 4px';
     }
 
-    if (__DEV__) {
+    if (import.meta.env.DEV) {
       aData
         ? console.log('%c%s', css, aLevel, aMsg, aData)
         : console.log('%c%s', css, aLevel, aMsg);
@@ -93,7 +93,7 @@ export class LogMng {
   }
 
   public static system(aMsg: any, aLink: string = '') {
-    if (__DEV__) {
+    if (import.meta.env.DEV) {
       console.log(
         '%c %c %c %s %c %c %c %c%s',
         LogMng.getCSS('#5C6166'),

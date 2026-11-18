@@ -1,4 +1,4 @@
-import './html/css/main.css';
+import './styles/main.css';
 import * as Phaser from 'phaser';
 import { Config } from './data/Config';
 import { Params } from './data/Params';

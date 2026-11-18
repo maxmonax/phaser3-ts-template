@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { AudioMng } from '@/audio/AudioMng';
 import { Config } from '@/data/Config';
 import { Curtain } from '@/gui/Curtain';

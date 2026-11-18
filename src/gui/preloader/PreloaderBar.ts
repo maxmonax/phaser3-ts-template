@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 export class PreloaderBar extends Phaser.GameObjects.Container {
   private _useSimple = false;
   private _borderColor: number;

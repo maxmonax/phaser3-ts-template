@@ -1,3 +1,4 @@
+import * as Phaser from 'phaser';
 import { MyContainer } from './basic/MyContainer';
 import { MyGraphics } from './basic/MyGraphics';
 
