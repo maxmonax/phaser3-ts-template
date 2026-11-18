@@ -1,61 +1,31 @@
 import { MyMath } from './MyMath';
 
 export class MyUtils {
-  private static queryValues: Record<string, string | string[]> | null = null;
-
-  private static readQueryValues() {
-    const vals: Record<string, string | string[]> = {};
-    const query = window.location.search.substring(1);
-    const vars = query.split('&');
-    for (let i = 0; i < vars.length; i++) {
-      const pair = vars[i].split('=');
-      const key = pair[0];
-      const val = decodeURIComponent(pair[1] ?? '');
-      if (typeof vals[key] === 'undefined') {
-        vals[key] = val;
-      } else if (typeof vals[key] === 'string') {
-        vals[key] = [vals[key] as string, val];
-      } else {
-        (vals[key] as string[]).push(val);
-      }
-    }
-    this.queryValues = vals;
-  }
-
-  /**
-   * Get GET value by key
-   */
-  public static getQueryValue(aValName: string): string | string[] | undefined {
-    if (this.queryValues === null) this.readQueryValues();
-    return this.queryValues![aValName];
-  }
-
+  /** File name without the directory part. Accepts both `/` and `\` separators. */
   public static getFileName(aFilePath: string): string {
     return (aFilePath.split('\\').pop() ?? aFilePath).split('/').pop() ?? aFilePath;
   }
 
-  public static getFileExt(aFileName: string, ignore?: string[]): string {
-    let fileType = '';
-    for (let i = aFileName.length - 1; i >= 0; i--) {
-      if (aFileName[i] == '.') {
-        if (ignore && ignore.indexOf(fileType) >= 0) {
-          // ignore types
-          fileType = '';
-          continue;
-        }
-        break;
-      } else {
-        fileType = aFileName[i] + fileType;
-      }
+  /**
+   * Lower-cased file extension without the dot, or `''` if there is none.
+   * @param ignore - lower-cased extensions to skip: `getFileExt('a.png.meta', ['meta'])` is `'png'`
+   */
+  public static getFileExt(aFileName: string, ignore: string[] = []): string {
+    const parts = MyUtils.getFileName(aFileName).split('.');
+    // parts[0] is the name itself, so a file without dots has no extension
+    for (let i = parts.length - 1; i > 0; i--) {
+      const ext = parts[i].toLowerCase();
+      if (!ignore.includes(ext)) return ext;
     }
-    fileType.toLowerCase();
-    return fileType;
+    return '';
   }
 
+  /** Formats a duration as `HH:MM:SS`. */
   public static secondsToHMS(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.round(seconds % 60);
+    const total = Math.max(0, Math.round(seconds));
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const remainingSeconds = total % 60;
 
     const hoursStr = hours.toString().padStart(2, '0');
     const minutesStr = minutes.toString().padStart(2, '0');

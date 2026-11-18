@@ -1,5 +1,3 @@
-import { InterpolationUtils } from './InterpolateUtils';
-
 export class Vec2 {
   x: number;
   y: number;
@@ -70,9 +68,12 @@ export class MyMath {
     return Math.random() * Math.abs(max - min) + min;
   }
 
+  /** Random integer in [min..max], both ends included, every value equally likely. */
   public static randomIntInRange(min: number, max: number): number {
     if (min > max) throw new Error('MyMath.randomIntInRange(): Min > Max!');
-    return Math.round(MyMath.randomInRange(min, max));
+    const lo = Math.ceil(min);
+    const hi = Math.floor(max);
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
   }
 
   public static isValueBetween(aValue: number, aMin: number, aMax: number): boolean {
@@ -83,18 +84,19 @@ export class MyMath {
    * Return -1 or 1 randomly
    */
   public static randomSign(): number {
-    const res = this.randomInRange(-10, 10) < 0 ? -1 : 1;
-    return res;
+    return Math.random() < 0.5 ? -1 : 1;
   }
 
-  public static shuffleArray<T>(mas: T[], factor = 2) {
-    for (let i = 0; i < mas.length * factor; i++) {
-      const id1 = this.randomIntInRange(0, mas.length - 1);
-      const id2 = this.randomIntInRange(0, mas.length - 1);
-      const item = mas[id1];
-      mas[id1] = mas[id2];
-      mas[id2] = item;
+  /**
+   * Shuffles the array in place (Fisher–Yates): every permutation is equally likely.
+   * @returns the same array
+   */
+  public static shuffleArray<T>(mas: T[]): T[] {
+    for (let i = mas.length - 1; i > 0; i--) {
+      const j = MyMath.randomIntInRange(0, i);
+      [mas[i], mas[j]] = [mas[j], mas[i]];
     }
+    return mas;
   }
 
   /**
@@ -139,7 +141,7 @@ export class MyMath {
    * @returns Value by time
    */
   public static lerp(a: number, b: number, t: number): number {
-    return InterpolationUtils.linear(a, b, t);
+    return a + (b - a) * t;
   }
 
   /**
@@ -189,8 +191,10 @@ export class MyMath {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
+  /** Unit vector with the same direction. A zero vector stays zero. */
   public static normalizeVector(v: { x: number; y: number }): { x: number; y: number } {
     const length = this.getVec2Length(0, 0, v.x, v.y);
+    if (length === 0) return { x: 0, y: 0 };
     return { x: v.x / length, y: v.y / length };
   }
 
@@ -316,21 +320,13 @@ export class MyMath {
     px: number,
     py: number
   ): boolean {
-    let res = false;
-    // move triangle А point to (0;0)
-    const b0x = bx - ax;
-    const b0y = by - ay;
-    const c0x = cx - ax;
-    const c0y = cy - ay;
-    const p0x = px - ax;
-    const p0y = py - ay;
-    //
-    const m = (p0x * b0y - b0x * p0y) / (c0x * b0y - b0x * c0y);
-    if (m >= 0 && m <= 1) {
-      const l = (p0x - m * c0x) / b0x;
-      if (l >= 0 && m + l <= 1) res = true;
-    }
-    return res;
+    // The point is inside (or on an edge) when it lies on the same side of all three edges.
+    const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+    const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+    const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+    const hasNegative = d1 < 0 || d2 < 0 || d3 < 0;
+    const hasPositive = d1 > 0 || d2 > 0 || d3 > 0;
+    return !(hasNegative && hasPositive);
   }
 
   public static isPointInRect(rect: RectABCD, p: Vec2): boolean {
@@ -365,14 +361,16 @@ export class MyMath {
   }
 
   /**
-   * Calculates the factorial of a given number for integer values greater than 0.
-   * @param aValue - A positive integer to calculate the factorial of.
+   * Calculates the factorial of a non-negative integer.
+   * @param aValue - A non-negative integer to calculate the factorial of.
    * @return The factorial of the given number.
    */
   public static factorial(aValue: number): number {
-    if (aValue === 0) return 1;
-    let res = aValue;
-    while (--aValue) res *= aValue;
+    if (!Number.isInteger(aValue) || aValue < 0) {
+      throw new Error('MyMath.factorial(): a non-negative integer is expected');
+    }
+    let res = 1;
+    for (let i = 2; i <= aValue; i++) res *= i;
     return res;
   }
 }
