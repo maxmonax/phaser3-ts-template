@@ -21,7 +21,7 @@ A starter template for browser games built with **Phaser 3**, **TypeScript** and
 Requires [Node.js](https://nodejs.org) 22.12 or newer (`.nvmrc` pins the version used in CI).
 
 ```sh
-git clone https://github.com/maxmonax/phaser3-ts-webpack.git my-game
+git clone https://github.com/maxmonax/phaser3-ts-template.git my-game
 cd my-game
 npm install
 npm run dev
