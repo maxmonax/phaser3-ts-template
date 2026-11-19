@@ -4,6 +4,14 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      # This is the Phaser 3 template: Phaser 4 lives in phaser4-ts-template.
+      - dependency-name: phaser
+        update-types: ['version-update:semver-major']
+      # The types follow the oldest Node in "engines" (package.json), so the compiler rejects
+      # APIs that Node lacks. Raise them by hand together with "engines".
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       dev-tooling:
         dependency-type: development
